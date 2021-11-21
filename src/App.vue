@@ -2,13 +2,11 @@
   <div class="app">
     <h1 v-text="'My table component'"/>
     <input type="file" accept="application/json" ref="fileRef" @change="getFile">
-    <div class="table-data">
       <TableComponent v-if="tableData"
                       :injectionProp="injectTableState"
                       @toggle="toggleTables"
                       :tableData="tableData"
                       :tableName="tableName"/>
-    </div>
   </div>
 </template>
 
