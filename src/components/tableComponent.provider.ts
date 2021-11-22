@@ -9,21 +9,15 @@ export const injectTableState = () => inject(stateKey);
 
 export function provideTableState () {
   const tableData = ref<TableRow[]>();
-  const collapsedTables = ref<number[]>([]);
+  const collapsedTables = ref<Record<number, boolean>>({});
 
 
   const toggleTables = (tableId: number) => {
-    const hasCollapsed = collapsedTables.value?.indexOf(tableId);
-
-    collapsedTables.value = hasCollapsed !== -1
-        ? collapsedTables.value.filter(id => id !== tableId)
-        : [
-        ...collapsedTables.value,
-        tableId
-      ]
+    collapsedTables.value = {
+      ...collapsedTables.value,
+      [tableId]: !collapsedTables.value[tableId]
+    }
   }
-
-  const hasCollapsedTable = (rowId: number) => collapsedTables.value.find(id => id === rowId)
 
   const setTableData = (data: TableRow[]) => {
     tableData.value = data.map(value => addIterateKeys(value));
@@ -35,11 +29,16 @@ export function provideTableState () {
           records: row.kids[key]?.records
             .map(kidValue => addIterateKeys(kidValue))
         }
+        collapsedTables.value[row.kids[key].id] = true
       })
+
+
+      const id = generateId();
+      collapsedTables.value[id] = true
 
       return {
         ...row,
-        id: generateId(),
+        id,
       }
     }
   }
@@ -54,7 +53,7 @@ export function provideTableState () {
         return false;
 
       (Object.keys(row.kids) || []).map(key => {
-        row.kids[key].records =  row.kids[key]?.records.filter(kidValue => deleteRowWithId(kidValue))
+        row.kids[key].records = row.kids[key]?.records.filter(kidValue => deleteRowWithId(kidValue))
       })
 
       return row.id !== rowId
@@ -66,7 +65,6 @@ export function provideTableState () {
     toggleTables,
     deleteRow,
     collapsedTables,
-    hasCollapsedTable,
     tableData
   }
 
@@ -77,7 +75,6 @@ export function provideTableState () {
     toggleTables,
     deleteRow,
     collapsedTables,
-    hasCollapsedTable,
     tableData
   }
 }

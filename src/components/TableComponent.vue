@@ -1,38 +1,45 @@
 <template>
-  <div :class="$style.child_table">
-    <div :class=$style.child_title v-text="tableName"/>
+  <table :class="$style.child_table" >
+    <caption :class=$style.child_title v-text="tableName"/>
     <template v-if="tableData?.length">
-      <div :class=$style.table_headers>
-        <div :class=$style.table_header v-for="(headerName, key) in tableHeaders" v-text="headerName" :key="key"/>
-      </div>
-      <div>
-        <div :class="$style.row_wrapper" v-for="({ data, kids, id }, index) in tableData" :key="index">
-          <div :class="$style.table_row">
-            <div  v-for="(rowData, keyName) in data"
-                  :key="keyName"
-                  :class="$style.table_key"
-                  v-text="rowData"
+      <thead :class=$style.table_headers>
+        <tr>
+          <th></th>
+          <th v-for="(headerName, key) in tableHeaders" :scope="headerName" v-text="headerName" :key="key" />
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <template v-for="({ data, kids, id }, index) in tableData" :key="index">
+          <tr >
+            <td
+              :class="[$style.collapse_arrow, collapsedTables[id] && $style.collapsed]"
+              v-text="Object.keys(kids).length ? '>' : ''"
+              @click="toggleTables(id)"
             />
-            <div :class="$style.delete_row" v-text="`X`" @click="deleteRow(id)"/>
-          </div>
-          <div :class="$style.nested_table" v-for="(_, childKey) in kids" :key="childKey">
-            <template v-if="getRowKids(kids, childKey).length" >
-              <div :class="[$style.collapse_arrow, hasCollapsedTable(kids[childKey].id) && $style.collapsed]"
-                   v-text="'>'"
-                   @click="toggleTables(kids[childKey].id)"
-              />
-              <TableComponent
-                v-show="!hasCollapsedTable(kids[childKey].id)"
-                :tableData="getRowKids(kids, childKey)"
-                :injectionProp="injectionProp"
-                :tableName="childKey"/>
-            </template>
-          </div>
-        </div>
-      </div>
+            <td  v-for="(rowData, keyName) in data"
+                 :key="keyName"
+                 :scope="keyName"
+                 :class="$style.table_key"
+                 v-text="rowData"
+            />
+            <td :class="$style.delete_row" v-text="`X`" @click="deleteRow(id)"/>
+          </tr>
+          <template v-for="(_, childKey) in kids">
+            <tr v-if="getRowKids(kids, childKey).length && !collapsedTables[id]" :class="$style.nested_table" :key="childKey" >
+              <th :colspan="tableHeaders.length + 2">
+                <TableComponent
+                  :tableData="getRowKids(kids, childKey)"
+                  :injectionProp="injectionProp"
+                  :tableName="childKey"/>
+              </th>
+            </tr>
+          </template>
+        </template>
+      </tbody>
     </template>
 
-  </div>
+  </table>
 </template>
 
 <script lang="ts">
@@ -58,8 +65,7 @@
       }
     },
     setup(props) {
-      const { toggleTables, hasCollapsedTable, deleteRow } = props.injectionProp!();
-
+      const { toggleTables, collapsedTables, deleteRow } = props.injectionProp!();
 
       const tableHeaders = computed(() => {
         if (!props.tableData?.length)
@@ -73,7 +79,7 @@
 
       return {
         toggleTables,
-        hasCollapsedTable,
+        collapsedTables,
         deleteRow,
         tableHeaders,
         getRowKids
@@ -84,13 +90,14 @@
 
 <style lang="scss" module>
 :root {
-  --border-color: #212020;
+  --border-color: #525151;
 }
 
 .child_table {
   margin-left: 1rem;
+  border-collapse: collapse;
   margin-top: 0.25rem;
-  border: 1px solid var(--border-color);
+  margin-bottom: 0.25rem;
 }
 
 .child_title {
@@ -99,56 +106,34 @@
   text-align: start;
 }
 
-.table_headers {
-  display: flex;
-  align-items: center;
-  background-color: rgba(44, 62, 80, 0.62);
-  padding: 0.6rem 0;
-}
-.table_header {
-  padding: 0 0.4rem;
-
-  & + .table_header {
-    border-left: 1px solid var(--border-color);
-  }
+th {
+  padding: 0 0.5rem;
 }
 
-.table_row {
-  display: flex;
-  align-items: center;
+td {
+  font-weight: normal;
 }
 
-.table_key {
-  padding: 0.8rem 0.4rem;
-
-  & + .table_key {
-    border-left: 1px solid var(--border-color);
-  }
-}
-
-.row_wrapper {
-  display: block;
-
-  & + .row_wrapper {
+tbody {
+  & > tr {
     border-top: 1px solid var(--border-color);
   }
 }
 
-.table_row {
-  border-top: 1px solid var(--border-color);
+.table_headers {
+  background-color: rgba(60, 100, 140, 0.62);
+  height: 3rem;
+}
 
-  & + .table_row {
-    border-top: none;
-  }
+.table_key {
+  padding: 0.8rem 0.4rem;
 }
 
 .nested_table {
-  margin-top: 0.5rem;
-  display: flex;
+  border: none;
 }
 
 .delete_row {
-  margin-left: auto;
   cursor: pointer;
   padding: 0.8rem 0.6rem;
 }
